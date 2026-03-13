@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft マップビューアー</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- jQuery CDN -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- タイトル＋座標入力フォーム -->
+        <div class="coordinate-input">
+            <span class="coordinate-input-title">Minecraft マップビューアー</span>
+            <label>
+                X座標: <input type="number" id="inputX" placeholder="0">
+            </label>
+            <label>
+                Z座標: <input type="number" id="inputZ" placeholder="0">
+            </label>
+            <button id="locateBtn">位置を表示</button>
+            <button id="clearBtn">クリア</button>
+        </div>
+        
+        <!-- 地図表示エリア -->
+        <div class="map-container">
+            <canvas id="mapCanvas"></canvas>
+        </div>
+        
+        <!-- 現在の座標表示 -->
+        <div id="currentCoords" class="coords-display" style="display: none;"></div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
