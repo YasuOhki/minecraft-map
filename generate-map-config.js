@@ -76,6 +76,22 @@ function main() {
     process.exit(1);
   }
 
+  // 同じ (offsetX, offsetZ) の組み合わせがないかチェック
+  const byOffset = new Map();
+  for (const tile of tiles) {
+    const key = `${tile.offsetX},${tile.offsetZ}`;
+    if (!byOffset.has(key)) byOffset.set(key, []);
+    byOffset.get(key).push(tile);
+  }
+  for (const [key, list] of byOffset) {
+    if (list.length > 1) {
+      const [ox, oz] = key.split(',');
+      console.warn(
+        `[ワーニング] 同じオフセット (${ox}, ${oz}) の組み合わせが複数あります: ${list.map((t) => t.file).join(', ')}`
+      );
+    }
+  }
+
   const layout = buildLayout(tiles);
 
   let config;

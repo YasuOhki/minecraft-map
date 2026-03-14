@@ -310,7 +310,15 @@ $('#mapCanvas').on('click', function(e) {
     const bufferX = rect.width > 0 ? displayX * (canvas.width / rect.width) : 0;
     const bufferY = rect.height > 0 ? displayY * (canvas.height / rect.height) : 0;
     const worldCoords = pixelToWorld(bufferX, bufferY);
-    console.log(`クリック位置 - ピクセル: (${Math.round(bufferX)}, ${Math.round(bufferY)}), ワールド: (${worldCoords.x}, ${worldCoords.z})`);
+
+    const tileSize = mapConfig.tileSize;
+    const col = Math.floor(bufferX / tileSize);
+    const row = Math.floor(bufferY / tileSize);
+    const layout = mapConfig.layout;
+    const tile = layout[row] && layout[row][col];
+    const tileFile = tile ? tile.file : '(地図なし)';
+
+    console.log(`クリック位置 - ピクセル: (${Math.round(bufferX)}, ${Math.round(bufferY)}), ワールド: (${worldCoords.x}, ${worldCoords.z}), タイル: ${tileFile}`);
 });
 
 // ピクセル座標からワールド座標への変換（逆変換）
