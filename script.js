@@ -318,6 +318,7 @@ $('#mapCanvas').on('click', function(e) {
     const tile = layout[row] && layout[row][col];
     const tileFile = tile ? tile.file : '(地図なし)';
 
+    $('#selectedTileDisplay').text(tileFile);
     console.log(`クリック位置 - ピクセル: (${Math.round(bufferX)}, ${Math.round(bufferY)}), ワールド: (${worldCoords.x}, ${worldCoords.z}), タイル: ${tileFile}`);
 });
 

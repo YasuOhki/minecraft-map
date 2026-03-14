@@ -76,6 +76,13 @@ body {
     background-color: #da190b;
 }
 
+.selected-tile-display {
+    padding: 6px 12px;
+    min-width: 120px;
+    color: #fff;
+    font-size: 1rem;
+}
+
 .map-container {
     background-color: #1a1a1a;
     border: 2px solid #555;
