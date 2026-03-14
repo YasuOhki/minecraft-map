@@ -7,6 +7,16 @@ let currentMarker = null;
 // 4倍縮小地図用: 1ピクセルが何ブロックか
 const BLOCKS_PER_PIXEL = 4;
 
+// ズーム: 標準で表示域に何タイル分見えるか（定数化して変更可能）
+const DEFAULT_VISIBLE_TILES = 5;
+const ZOOM_MIN = 0.25;
+const ZOOM_MAX = 4;
+const ZOOM_STEP = 1.2;
+
+let zoomLevel = 1.0;           // 1.0 = 標準（DEFAULT_VISIBLE_TILES タイルが見える）
+let baseScale = 1.0;          // コンテナから計算する基準スケール
+let currentDisplayScale = 1.0; // 現在の表示スケール = baseScale * zoomLevel
+
 // 初期化
 $(document).ready(async function() {
     canvas = $('#mapCanvas')[0];
@@ -16,6 +26,7 @@ $(document).ready(async function() {
     try {
         mapConfig = await $.getJSON('map-config.json');
         await loadAndDrawMap();
+        applyZoom(); // 標準（DEFAULT_VISIBLE_TILES タイル表示）で初期表示
     } catch (error) {
         console.error('設定ファイルの読み込みに失敗しました:', error);
         alert('地図の読み込みに失敗しました');
@@ -24,6 +35,14 @@ $(document).ready(async function() {
     // イベントリスナーの設定
     $('#locateBtn').on('click', locatePosition);
     $('#clearBtn').on('click', clearMarker);
+    $('#zoomInBtn').on('click', zoomIn);
+    $('#zoomOutBtn').on('click', zoomOut);
+    
+    // マウスホイールでズーム（地図エリア上で）。passive: false で preventDefault を有効にする
+    $('.map-container')[0].addEventListener('wheel', onMapWheel, { passive: false });
+    
+    // リサイズ時に基準スケールを再計算し、中心を維持して表示を更新
+    $(window).on('resize', onWindowResize);
     
     // Enterキーで位置を表示
     $('#inputX, #inputZ').on('keypress', function(e) {
@@ -61,6 +80,99 @@ async function loadAndDrawMap() {
     }
     
     await Promise.all(promises);
+}
+
+// コンテナの利用可能サイズ（パディング除く）
+function getContainerUsableSize() {
+    const $container = $('.map-container');
+    const w = $container.width();
+    const h = $container.height();
+    const padding = 40; // style の padding 20px * 2 に合わせる
+    return { width: Math.max(1, w - padding), height: Math.max(1, h - padding) };
+}
+
+// 表示域に DEFAULT_VISIBLE_TILES タイルが入る基準スケールを計算
+function computeBaseScale() {
+    const size = getContainerUsableSize();
+    const tileSize = mapConfig.tileSize;
+    const scaleByWidth = size.width / (DEFAULT_VISIBLE_TILES * tileSize);
+    const scaleByHeight = size.height / (DEFAULT_VISIBLE_TILES * tileSize);
+    return Math.min(scaleByWidth, scaleByHeight);
+}
+
+/**
+ * ズームを適用。画面中心（または指定した割合の点）を維持するようスクロールを補正する。
+ * @param {number} [centerFracX] 維持する中心の X 割合 (0〜1)。省略時は現在の表示中心。
+ * @param {number} [centerFracY] 維持する中心の Y 割合 (0〜1)。
+ */
+function applyZoom(centerFracX, centerFracY) {
+    const $container = $('.map-container');
+    const oldDisplayWidth = canvas.width * currentDisplayScale;
+    const oldDisplayHeight = canvas.height * currentDisplayScale;
+    const scrollLeft = $container.scrollLeft();
+    const scrollTop = $container.scrollTop();
+    const containerWidth = $container.width();
+    const containerHeight = $container.height();
+
+    baseScale = computeBaseScale();
+    currentDisplayScale = baseScale * zoomLevel;
+
+    canvas.style.width = (canvas.width * currentDisplayScale) + 'px';
+    canvas.style.height = (canvas.height * currentDisplayScale) + 'px';
+
+    // 中心を維持するスクロール補正
+    if (centerFracX !== undefined && centerFracY !== undefined) {
+        const newDisplayWidth = canvas.width * currentDisplayScale;
+        const newDisplayHeight = canvas.height * currentDisplayScale;
+        const newCenterX = centerFracX * newDisplayWidth;
+        const newCenterY = centerFracY * newDisplayHeight;
+        $container.scrollLeft(Math.max(0, newCenterX - containerWidth / 2));
+        $container.scrollTop(Math.max(0, newCenterY - containerHeight / 2));
+    } else {
+        const centerX = scrollLeft + containerWidth / 2;
+        const centerY = scrollTop + containerHeight / 2;
+        const fracX = oldDisplayWidth > 0 ? centerX / oldDisplayWidth : 0.5;
+        const fracY = oldDisplayHeight > 0 ? centerY / oldDisplayHeight : 0.5;
+        const newDisplayWidth = canvas.width * currentDisplayScale;
+        const newDisplayHeight = canvas.height * currentDisplayScale;
+        $container.scrollLeft(Math.max(0, fracX * newDisplayWidth - containerWidth / 2));
+        $container.scrollTop(Math.max(0, fracY * newDisplayHeight - containerHeight / 2));
+    }
+}
+
+function zoomIn() {
+    zoomLevel = Math.min(ZOOM_MAX, zoomLevel * ZOOM_STEP);
+    applyZoom();
+}
+
+function zoomOut() {
+    zoomLevel = Math.max(ZOOM_MIN, zoomLevel / ZOOM_STEP);
+    applyZoom();
+}
+
+function onMapWheel(e) {
+    e.preventDefault();
+    const $container = $('.map-container');
+    const rect = $container[0].getBoundingClientRect();
+    const scrollLeft = $container.scrollLeft();
+    const scrollTop = $container.scrollTop();
+    const contentX = scrollLeft + (e.clientX - rect.left);
+    const contentY = scrollTop + (e.clientY - rect.top);
+    const oldDisplayWidth = canvas.width * currentDisplayScale;
+    const oldDisplayHeight = canvas.height * currentDisplayScale;
+    const centerFracX = oldDisplayWidth > 0 ? contentX / oldDisplayWidth : 0.5;
+    const centerFracY = oldDisplayHeight > 0 ? contentY / oldDisplayHeight : 0.5;
+
+    if (e.deltaY < 0) {
+        zoomLevel = Math.min(ZOOM_MAX, zoomLevel * ZOOM_STEP);
+    } else {
+        zoomLevel = Math.max(ZOOM_MIN, zoomLevel / ZOOM_STEP);
+    }
+    applyZoom(centerFracX, centerFracY);
+}
+
+function onWindowResize() {
+    applyZoom();
 }
 
 // 個別タイルの読み込みと描画
@@ -167,17 +279,18 @@ function drawMarker(x, y) {
     ctx.stroke();
 }
 
-// マーカー位置までスクロール
+// マーカー位置までスクロール（x, y はキャンバスバッファ座標）
 function scrollToMarker(x, y) {
     const $container = $('.map-container');
     const containerWidth = $container.width();
     const containerHeight = $container.height();
-    
-    // マーカーが中央に来るようにスクロール
-    $container.animate({
-        scrollLeft: x - containerWidth / 2,
-        scrollTop: y - containerHeight / 2
-    }, 500);
+    const displayX = x * currentDisplayScale;
+    const displayY = y * currentDisplayScale;
+    const maxScrollLeft = Math.max(0, canvas.width * currentDisplayScale - containerWidth);
+    const maxScrollTop = Math.max(0, canvas.height * currentDisplayScale - containerHeight);
+    const scrollLeft = Math.min(maxScrollLeft, Math.max(0, displayX - containerWidth / 2));
+    const scrollTop = Math.min(maxScrollTop, Math.max(0, displayY - containerHeight / 2));
+    $container.animate({ scrollLeft, scrollTop }, 500);
 }
 
 // マーカーのクリア
@@ -189,14 +302,15 @@ function clearMarker() {
     loadAndDrawMap();
 }
 
-// キャンバス上でのクリックイベント（座標確認用）
+// キャンバス上でのクリックイベント（座標確認用）。表示座標をバッファ座標に変換してからワールド座標へ。
 $('#mapCanvas').on('click', function(e) {
     const rect = canvas.getBoundingClientRect();
-    const pixelX = e.clientX - rect.left;
-    const pixelY = e.clientY - rect.top;
-    const worldCoords = pixelToWorld(pixelX, pixelY);
-    
-    console.log(`クリック位置 - ピクセル: (${Math.round(pixelX)}, ${Math.round(pixelY)}), ワールド: (${worldCoords.x}, ${worldCoords.z})`);
+    const displayX = e.clientX - rect.left;
+    const displayY = e.clientY - rect.top;
+    const bufferX = rect.width > 0 ? displayX * (canvas.width / rect.width) : 0;
+    const bufferY = rect.height > 0 ? displayY * (canvas.height / rect.height) : 0;
+    const worldCoords = pixelToWorld(bufferX, bufferY);
+    console.log(`クリック位置 - ピクセル: (${Math.round(bufferX)}, ${Math.round(bufferY)}), ワールド: (${worldCoords.x}, ${worldCoords.z})`);
 });
 
 // ピクセル座標からワールド座標への変換（逆変換）
