@@ -38,9 +38,6 @@ $(document).ready(async function() {
     $('#zoomInBtn').on('click', zoomIn);
     $('#zoomOutBtn').on('click', zoomOut);
     
-    // マウスホイールでズーム（地図エリア上で）。passive: false で preventDefault を有効にする
-    $('.map-container')[0].addEventListener('wheel', onMapWheel, { passive: false });
-    
     // リサイズ時に基準スケールを再計算し、中心を維持して表示を更新
     $(window).on('resize', onWindowResize);
     
@@ -148,27 +145,6 @@ function zoomIn() {
 function zoomOut() {
     zoomLevel = Math.max(ZOOM_MIN, zoomLevel / ZOOM_STEP);
     applyZoom();
-}
-
-function onMapWheel(e) {
-    e.preventDefault();
-    const $container = $('.map-container');
-    const rect = $container[0].getBoundingClientRect();
-    const scrollLeft = $container.scrollLeft();
-    const scrollTop = $container.scrollTop();
-    const contentX = scrollLeft + (e.clientX - rect.left);
-    const contentY = scrollTop + (e.clientY - rect.top);
-    const oldDisplayWidth = canvas.width * currentDisplayScale;
-    const oldDisplayHeight = canvas.height * currentDisplayScale;
-    const centerFracX = oldDisplayWidth > 0 ? contentX / oldDisplayWidth : 0.5;
-    const centerFracY = oldDisplayHeight > 0 ? contentY / oldDisplayHeight : 0.5;
-
-    if (e.deltaY < 0) {
-        zoomLevel = Math.min(ZOOM_MAX, zoomLevel * ZOOM_STEP);
-    } else {
-        zoomLevel = Math.max(ZOOM_MIN, zoomLevel / ZOOM_STEP);
-    }
-    applyZoom(centerFracX, centerFracY);
 }
 
 function onWindowResize() {
