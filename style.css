@@ -90,7 +90,8 @@ body {
     overflow: auto;
     max-height: 80vh;
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
+    align-items: flex-start;
     padding: 20px;
 }
 
