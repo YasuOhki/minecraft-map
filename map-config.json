@@ -2,8 +2,8 @@
   "tileSize": 180,
   "referencePoint": {
     "tile": "#17",
-    "worldX": 0,
-    "worldZ": 0,
+    "worldX": -64,
+    "worldZ": -64,
     "comment": "#17.pngの左上がワールド座標(0, 0)"
   },
   "layout": [
@@ -1363,7 +1363,10 @@
     [
       null,
       null,
-      null,
+      {
+        "id": "#1284",
+        "file": "#1284_-10_4.png"
+      },
       null,
       null,
       null,
@@ -1425,7 +1428,10 @@
     [
       null,
       null,
-      null,
+      {
+        "id": "#1281",
+        "file": "#1281_-10_5.png"
+      },
       null,
       null,
       null,
@@ -1490,9 +1496,18 @@
     [
       null,
       null,
-      null,
-      null,
-      null,
+      {
+        "id": "#1278",
+        "file": "#1278_-10_6.png"
+      },
+      {
+        "id": "#1275",
+        "file": "#1275_-9_6.png"
+      },
+      {
+        "id": "#1272",
+        "file": "#1272_-8_6.png"
+      },
       {
         "id": "#442",
         "file": "#442_-7_6.png"
@@ -1562,8 +1577,14 @@
       null,
       null,
       null,
-      null,
-      null,
+      {
+        "id": "#1269",
+        "file": "#1269_-9_7.png"
+      },
+      {
+        "id": "#1266",
+        "file": "#1266_-8_7.png"
+      },
       {
         "id": "#361",
         "file": "#361_-7_7.png"
