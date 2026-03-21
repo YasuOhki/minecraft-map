@@ -95,6 +95,12 @@ body {
     padding: 20px;
 }
 
+.map-canvas-stack {
+    position: relative;
+    display: inline-block;
+    vertical-align: top;
+}
+
 #mapCanvas {
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
@@ -102,6 +108,17 @@ body {
     border: 1px solid #666;
     display: block;
     /* 表示サイズは script.js のズーム処理で設定 */
+}
+
+#mapOverlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    display: block;
 }
 
 .zoom-buttons {

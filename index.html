@@ -30,7 +30,10 @@
         
         <!-- 地図表示エリア -->
         <div class="map-container">
-            <canvas id="mapCanvas"></canvas>
+            <div class="map-canvas-stack">
+                <canvas id="mapCanvas"></canvas>
+                <canvas id="mapOverlay" aria-hidden="true"></canvas>
+            </div>
         </div>
         
         <!-- 現在の座標表示 -->

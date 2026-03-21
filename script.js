@@ -1,8 +1,12 @@
 let mapConfig = null;
 let canvas = null;
 let ctx = null;
+let overlayCanvas = null;
+let overlayCtx = null;
 let loadedImages = {};
 let currentMarker = null;
+let selectedTileCol = null;
+let selectedTileRow = null;
 
 // 4倍縮小地図用: 1ピクセルが何ブロックか
 const BLOCKS_PER_PIXEL = 4;
@@ -21,6 +25,8 @@ let currentDisplayScale = 1.0; // 現在の表示スケール = baseScale * zoom
 $(document).ready(async function() {
     canvas = $('#mapCanvas')[0];
     ctx = canvas.getContext('2d');
+    overlayCanvas = $('#mapOverlay')[0];
+    overlayCtx = overlayCanvas.getContext('2d');
     
     // 設定ファイルの読み込み
     try {
@@ -77,6 +83,9 @@ async function loadAndDrawMap() {
     }
     
     await Promise.all(promises);
+
+    syncOverlayBufferSize();
+    redrawTileSelection();
 }
 
 // コンテナの利用可能サイズ（パディング除く）
@@ -116,6 +125,10 @@ function applyZoom(centerFracX, centerFracY) {
 
     canvas.style.width = (canvas.width * currentDisplayScale) + 'px';
     canvas.style.height = (canvas.height * currentDisplayScale) + 'px';
+    if (overlayCanvas) {
+        overlayCanvas.style.width = canvas.style.width;
+        overlayCanvas.style.height = canvas.style.height;
+    }
 
     // 中心を維持するスクロール補正
     if (centerFracX !== undefined && centerFracY !== undefined) {
@@ -149,6 +162,39 @@ function zoomOut() {
 
 function onWindowResize() {
     applyZoom();
+}
+
+function syncOverlayBufferSize() {
+    if (!overlayCanvas || !canvas) return;
+    overlayCanvas.width = canvas.width;
+    overlayCanvas.height = canvas.height;
+}
+
+function redrawTileSelection() {
+    if (!overlayCtx || !mapConfig) return;
+    overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    if (selectedTileCol === null || selectedTileRow === null) return;
+
+    const tileSize = mapConfig.tileSize;
+    const layout = mapConfig.layout;
+    if (selectedTileRow < 0 || selectedTileRow >= layout.length) return;
+    if (selectedTileCol < 0 || selectedTileCol >= layout[selectedTileRow].length) return;
+
+    const tile = layout[selectedTileRow][selectedTileCol];
+    const x = selectedTileCol * tileSize;
+    const y = selectedTileRow * tileSize;
+
+    overlayCtx.strokeStyle = tile ? '#4CAF50' : 'rgba(200, 200, 200, 0.9)';
+    overlayCtx.lineWidth = 3;
+    if (!tile) overlayCtx.setLineDash([8, 6]);
+    else overlayCtx.setLineDash([]);
+    overlayCtx.strokeRect(x + 1.5, y + 1.5, tileSize - 3, tileSize - 3);
+    overlayCtx.setLineDash([]);
+}
+
+function clearSelectedTile() {
+    selectedTileCol = null;
+    selectedTileRow = null;
 }
 
 // 個別タイルの読み込みと描画
@@ -272,6 +318,7 @@ function scrollToMarker(x, y) {
 // マーカーのクリア
 function clearMarker() {
     currentMarker = null;
+    clearSelectedTile();
     $('#currentCoords').fadeOut(300, function() {
         $(this).text('');
     });
@@ -295,6 +342,9 @@ $('#mapCanvas').on('click', function(e) {
     const tileFile = tile ? tile.file : '(地図なし)';
 
     $('#selectedTileDisplay').text(tileFile);
+    selectedTileCol = col;
+    selectedTileRow = row;
+    redrawTileSelection();
     console.log(`クリック位置 - ピクセル: (${Math.round(bufferX)}, ${Math.round(bufferY)}), ワールド: (${worldCoords.x}, ${worldCoords.z}), タイル: ${tileFile}`);
 });
 
